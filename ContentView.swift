@@ -47,6 +47,7 @@ struct ContentView: View {
 
     func stopCollectingData() {
         motionManager.stopAccelerometerUpdates()
+        motionManager.stopGyroUpdates()
     }
 }
 

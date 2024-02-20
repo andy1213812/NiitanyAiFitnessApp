@@ -7,14 +7,39 @@
 
 import SwiftUI
 
+let gradient1 = LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.6), Color.blue.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
+
 // Main ContentView that hosts the navigation
 struct ContentView: View {
     var body: some View {
         NavigationStack {
-            HeightSettingView()
+            WelcomeView()
         }
+        .background(
+            gradient1
+        )
     }
 }
+
+struct WelcomeView: View {
+    var body: some View {
+        Text("AIthlete Zone")
+            .font(.largeTitle)
+            .foregroundStyle(gradient1)
+            .shadow(color: .secondary, radius: 0)
+        NavigationLink(destination: HeightSettingView()) {
+            Text("Let's Begin!")
+        }
+        .frame(width: 135, height: 54)
+        .background(
+            Capsule()
+                .fill(Color.blue)
+        )
+        .foregroundColor(.white)
+    }
+}
+
+
 
 // Height Setting View
 struct HeightSettingView: View {
@@ -25,6 +50,7 @@ struct HeightSettingView: View {
         VStack {
             Text("Set Your Height")
                 .font(.headline)
+                .padding([.bottom], 5)
             
             HStack {
                 Picker("Feet", selection: $feet) {
@@ -32,8 +58,9 @@ struct HeightSettingView: View {
                         Text("\(feet) ft").tag(feet)
                     }
                 }
+                .labelsHidden()
                 .pickerStyle(.wheel)
-                .frame(width: 50)
+                .frame(width: 60, height: 85)
                 .clipped()
                 
                 Picker("Inches", selection: $inches) {
@@ -41,19 +68,24 @@ struct HeightSettingView: View {
                         Text("\(inches) in").tag(inches)
                     }
                 }
+                .labelsHidden()
                 .pickerStyle(.wheel)
-                .frame(width: 50)
+                .frame(width: 60, height: 85)
                 .clipped()
             }
             
+            
             NavigationLink(destination: WeightSettingView()) {
                 Text("Next")
-                    .padding()
-                    .background(Capsule().fill(Color.blue))
-                    .foregroundColor(.white)
             }
+            .frame(width: 135, height: 54)
+            .background(
+                Capsule()
+                .fill(Color.blue)
+            )
+            .foregroundColor(.white)
         }
-        .padding()
+        
     }
 }
 
@@ -63,69 +95,64 @@ struct WeightSettingView: View {
     
     var body: some View {
         VStack {
+            Text("Set Your Weight")
+                .font(.headline)
+                .padding([.bottom], 5)
 
             Picker("Weight", selection: $weight) {
                 ForEach(50..<301) { weight in
                     Text("\(weight) lbs").tag(weight)
                 }
             }
+            .labelsHidden()
             .pickerStyle(.wheel)
-            .frame(height: 150)
+            .frame(width: 125, height: 85)
             .clipped()
             
             NavigationLink(destination: BodyPartCategoryView()) {
                 Text("Next")
-                    .padding()
-                    .background(Capsule().fill(Color.blue))
-                    .foregroundColor(.white)
             }
+            
+            .frame(width: 135, height: 54)
+            .background(
+                Capsule()
+                .fill(Color.blue)
+            )
+            .foregroundColor(.white)
         }
-        .padding()
+//        .padding([.bottom], 2)
     }
 }
 
 // Body Part Category View
 struct BodyPartCategoryView: View {
-    // Define an array for body parts
-    let bodyParts = ["Shoulder", "Leg", "Chest", "Back"]
-    // Define a gradient background
-    let gradient = LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.6), Color.blue.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
-
+    let bodyParts = ["Shoulders", "Legs", "Chest", "Back"]
     var body: some View {
-        ZStack {
-            // Apply gradient background to the entire view
-            gradient.edgesIgnoringSafeArea(.all)
-            
-            VStack(alignment: .leading, spacing: 15) {
+        VStack {
+            ScrollView {
                 Text("Select Body Part")
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
-                    .padding(.bottom, 20)
-                    .padding(.top, 8) // Add top padding to create space from the top edge and back button
-                    .padding(.leading, 8) // Add leading padding to create space from the leading edge
-
-                // Loop through the body parts array
-                ForEach(bodyParts, id: \.self) { bodyPart in
-                    NavigationLink(destination: Text("Details for \(bodyPart)")) {
-                        Text(bodyPart)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.white.opacity(0.3))
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+                    .padding([.bottom], 10)
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(bodyParts, id: \.self) { bodyPart in
+                        NavigationLink(destination: Text("Details for \(bodyPart)")) {
+                            Text(bodyPart)
+                        }
+                        
+                        .frame(height: 54)
+                        .background(
+                            Capsule()
+                                .fill(Color.blue)
+                        )
                     }
+                    .padding([.leading, .trailing], 10)
                 }
             }
-            .padding()
         }
     }
-} 
-
-
-
-
+}
 
 
 // Preview Provider

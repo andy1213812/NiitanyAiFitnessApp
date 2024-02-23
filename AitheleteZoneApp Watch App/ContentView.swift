@@ -9,7 +9,6 @@ import SwiftUI
 
 let gradient1 = LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.6), Color.blue.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
 
-// Main ContentView that hosts the navigation
 struct ContentView: View {
     var body: some View {
         NavigationStack {
@@ -23,28 +22,23 @@ struct ContentView: View {
 
 struct WelcomeView: View {
     var body: some View {
-        Text("AIthlete Zone")
-            .font(.largeTitle)
-            .foregroundStyle(gradient1)
-            .shadow(color: .secondary, radius: 0)
-        NavigationLink(destination: HeightSettingView()) {
-            Text("Let's Begin!")
+        VStack {
+            Image("AIthleteZoneAppIcon")
+                .resizable()
+                .frame(width: 80, height: 80)
+            Text("AIthlete Zone")
+                .font(.title2)
+                .foregroundStyle(gradient1)
+                .shadow(color: .secondary, radius: 0)
+            NavigationButton(destination: HeightSettingView(), text: "Let's Begin!", width: 135, height: 54)
         }
-        .frame(width: 135, height: 54)
-        .background(
-            Capsule()
-                .fill(Color.blue)
-        )
-        .foregroundColor(.white)
     }
 }
 
-
-
-// Height Setting View
 struct HeightSettingView: View {
-    @State private var feet: Int = 5
-    @State private var inches: Int = 8
+    
+    @State private var feet = 5
+    @State private var inches = 8
     
     var body: some View {
         VStack {
@@ -74,24 +68,15 @@ struct HeightSettingView: View {
                 .clipped()
             }
             
-            
-            NavigationLink(destination: WeightSettingView()) {
-                Text("Next")
-            }
-            .frame(width: 135, height: 54)
-            .background(
-                Capsule()
-                .fill(Color.blue)
-            )
-            .foregroundColor(.white)
+            NavigationButton(destination: WeightSettingView(), text: "Next", width: 135, height: 54)
         }
         
     }
 }
 
-// Weight Setting View
 struct WeightSettingView: View {
-    @State private var weight: Int = 150
+    
+    @State private var weight = 150
     
     var body: some View {
         VStack {
@@ -109,58 +94,54 @@ struct WeightSettingView: View {
             .frame(width: 125, height: 85)
             .clipped()
             
-            NavigationLink(destination: BodyPartCategoryView()) {
-                Text("Next")
-            }
-            
-            .frame(width: 135, height: 54)
-            .background(
-                Capsule()
-                .fill(Color.blue)
-            )
-            .foregroundColor(.white)
+            NavigationButton(destination: BodyPartCategoryView(), text: "Next", width: 135, height: 54)
         }
-//        .padding([.bottom], 2)
     }
 }
 
-// Body Part Category View
 struct BodyPartCategoryView: View {
-    let bodyParts = ["Shoulders", "Legs", "Chest", "Back"]
     var body: some View {
-        VStack {
-            ScrollView {
-                Text("Select Body Part")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding([.bottom], 10)
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(bodyParts, id: \.self) { bodyPart in
-                        NavigationLink(destination: Text("Details for \(bodyPart)")) {
-                            Text(bodyPart)
+        NavigationStack {
+            VStack {
+                ScrollView {
+                    VStack(spacing: 10) {
+                        ForEach(MockData.bodyParts) { bodyPart in
+                            NavigationButton(destination: Text("Details for \(bodyPart.bodyPart)"),
+                                             text: bodyPart.bodyPart,
+                                             width: 160,
+                                             height: 54)
                         }
-                        
-                        .frame(height: 54)
-                        .background(
-                            Capsule()
-                                .fill(Color.blue)
-                        )
                     }
-                    .padding([.leading, .trailing], 10)
                 }
+                .navigationTitle("Select Body Part")
+                .navigationBarTitleDisplayMode(.inline)
             }
         }
     }
 }
 
+struct NavigationButton<Content: View>: View {
+    
+    let destination: Content
+    let text: String
+    let width: CGFloat
+    let height: CGFloat
+    
+    var body: some View {
+        NavigationLink(destination: destination) {
+            Text(text)
+        }
+        .frame(width: width, height: height)
+        .background(
+            Capsule()
+                .fill(Color.blue)
+        )
+        .foregroundColor(.white)
+    }
+}
 
-// Preview Provider
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
 }
-
-
-

@@ -3,12 +3,12 @@ import numpy as np
 from keras.models import load_model
 from sklearn.preprocessing import StandardScaler
 
-df = pd.read_excel('Clean_DataSet/Incorrect_Squat_2.xlsx')
+df = pd.read_excel('Clean_DataSet/Correct_Squat_2.xlsx')
 
 scaler = StandardScaler()
 df_mean = df.mean().to_frame().T
 features_scaled = scaler.fit_transform(df_mean)
-model = load_model('Sequential_model.h5')
+model = load_model('LSTM.h5')
 prediction = model.predict(features_scaled)
 threshold = 0.8
 set_quality = "Good" if prediction >= threshold else "Bad"

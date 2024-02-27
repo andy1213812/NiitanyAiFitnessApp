@@ -6,12 +6,12 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.preprocessing import MinMaxScaler
 
 # Assuming the paths would be replaced with your actual file paths
-data_path = '/path/to/your/correct/form/testing/data.xls'
-data2_path = '/path/to/your/training/data/squat/incorrect/form/cleaned.csv'
+data_path = 'Clean_Dataset/Correct_Squat_1.xlsx'
+data2_path = 'Clean_Dataset/Incorrect_Squat_1.xlsx'
 
 # Reading the data
 data = pd.read_excel(data_path).head(100)
-data2 = pd.read_csv(data2_path).head(100)
+data2 = pd.read_excel(data2_path).head(100)
 
 # Renaming columns
 columns = ["rep", "time", "rotation_x", "rotation_y", "rotation_z", "acceleration_x", "acceleration_y", "acceleration_z"]
@@ -42,7 +42,7 @@ y_data = training_data['outcome'].values[1:]  # Adjusted to match x_data's struc
 
 # Building the LSTM model
 LSTM_model = Sequential([
-    LSTM(units=50, input_shape=(1, 6)),
+    LSTM(units=50, input_shape=(1, 7)),
     Dense(units=1)
 ])
 
@@ -60,5 +60,6 @@ history = LSTM_model.fit(
     validation_split=0.2
 )
 
-from keras.models import load_model
-model.save('Sequential_model.h5')
+
+model_path = 'LSTM.h5'
+LSTM_model.save(model_path)

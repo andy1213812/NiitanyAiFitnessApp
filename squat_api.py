@@ -1,18 +1,26 @@
 from flask import Flask, request, jsonify
+from keras.models import load_model
 import numpy as np
-from tensorflow.keras.models import load_model
-import h5py as h5
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
-model = h5.File('Sequential_model.h5', 'r')
 app = Flask(__name__)
+model = load_model('Sequential_model.h5')
+
 model = load_model(model)  
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.get_json(force=True)
-    input_data = np.array(data)
-    predictions = model.predict(input_data)
-    return jsonify(predictions.tolist())
+    try:
+        json_ = request.json
+        query_df = pd.DataFrame(json_)
+        scaler = StandardScaler()
+        query = scaler.fit_transform(query_df)
+        prediction = model.predict(query)
+        return jsonify({'prediction': prediction.flatten().tolist()})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

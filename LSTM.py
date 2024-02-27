@@ -59,3 +59,6 @@ history = LSTM_model.fit(
     batch_size=32,
     validation_split=0.2
 )
+
+from keras.models import load_model
+model.save('Sequential_model.h5')

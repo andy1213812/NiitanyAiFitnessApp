@@ -5,14 +5,15 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 app = Flask(__name__)
-model = load_model('Sequential_model.h5')
+model = load_model('LSTM.h5')
 
-model = load_model(model)  
+data_path = 'Clean_Dataset/Correct_Squat_1.xlsx'
 
-@app.route('/predict', methods=['POST'])
+
+@app.route('/predict', methods=['POST','GET'])
 def predict():
     try:
-        json_ = request.json
+        json_ = data_path
         query_df = pd.DataFrame(json_)
         scaler = StandardScaler()
         query = scaler.fit_transform(query_df)

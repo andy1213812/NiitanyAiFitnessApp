@@ -83,7 +83,7 @@ class MotionDataManager: ObservableObject {
             return
         }
         
-        motionManager.deviceMotionUpdateInterval = 1.0 / 15.0 // Sample rate of 60 Hz
+        motionManager.deviceMotionUpdateInterval = 1.0 / 15.0 // Adjusted sample rate to 15 Hz for clarity
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
             guard let motion = motion, error == nil else {
                 print("Error reading motion data: \(error!.localizedDescription)")
@@ -93,16 +93,17 @@ class MotionDataManager: ObservableObject {
             self?.isCollecting = true
             print("Collecting motion data...")
             
-            let data: [String: Any] = [
-                "accelerationX": motion.userAcceleration.x + motion.gravity.x,
-                "accelerationY": motion.userAcceleration.y + motion.gravity.y,
-                "accelerationZ": motion.userAcceleration.z + motion.gravity.z,
-                "rotationRateX": motion.rotationRate.x,
-                "rotationRateY": motion.rotationRate.y,
-                "rotationRateZ": motion.rotationRate.z
-            ]
+            // Create an array of motion data in the expected order
+            let motionData: [[Double]] = [[
+                motion.userAcceleration.x,
+                motion.userAcceleration.y,
+                motion.userAcceleration.z,
+                motion.rotationRate.x,
+                motion.rotationRate.y,
+                motion.rotationRate.z
+            ]]
             
-            self?.sendDataToAPI(data: data, completion: completion)
+            self?.sendDataToAPI(motionData: motionData, completion: completion)
         }
     }
 
@@ -112,20 +113,23 @@ class MotionDataManager: ObservableObject {
         print("Stopped collecting motion data.")
     }
 
-    private func sendDataToAPI(data: [String: Any], completion: @escaping (Bool) -> Void) {
+    private func sendDataToAPI(motionData: [[Double]], completion: @escaping (Bool) -> Void) {
         guard let url = URL(string: "https://nittanyai-ro4jz76zva-ue.a.run.app/predict") else {
             print("Invalid API URL.")
-            completion(false) // Indicate error in API URL
+            completion(false)
             return
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // Construct the payload with the motion data correctly formatted
+        let payload = ["data": motionData]
+        
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
         } catch {
-            print("Error: cannot create JSON from data")
+            print("Error: cannot create JSON from payload")
             completion(false)
             return
         }
@@ -134,34 +138,35 @@ class MotionDataManager: ObservableObject {
         URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data, error == nil else {
                 print("Error sending data to API: \(error?.localizedDescription ?? "Unknown error")")
-                completion(false) // Indicate API communication error
+                completion(false)
                 return
             }
             
             print("Received response from API.")
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 do {
-                    if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any], let prediction = jsonResponse["prediction"] as? [[Double]] {
-                        let predictionValue = prediction.first?.first ?? 0.0
-                        print("Prediction value: \(predictionValue)")
+                    let jsonResponse = try JSONSerialization.jsonObject(with: data, options: [])
+                    print("Response JSON: \(jsonResponse)")
+                    if let dictionary = jsonResponse as? [String: Any], let prediction = dictionary["prediction"] as? Double {
                         DispatchQueue.main.async {
-                            completion(predictionValue >= 0.5)
+                            completion(prediction >= 0.5)
                         }
                     } else {
-                        print("Error parsing JSON response")
-                        completion(false) // Indicate JSON parsing error
+                        print("Error: Unexpected data format")
+                        completion(false)
                     }
                 } catch {
-                    print("Error parsing JSON response")
-                    completion(false) // Indicate JSON parsing error
+                    print("Error parsing JSON response: \(error.localizedDescription)")
+                    completion(false)
                 }
             } else {
                 print("API request failed with response: \(String(describing: response))")
-                completion(false) // Indicate API request failure
+                completion(false)
             }
         }.resume()
     }
 }
+
 
 // View for selecting the body part to monitor
 struct BodyPartCategoryView: View {
@@ -185,39 +190,73 @@ struct WorkoutSessionView: View {
     var bodyPart: String
     @ObservedObject var motionManager: MotionDataManager
     @State private var sessionActive = false
-    @State private var backgroundColor = Color.clear
-    @State private var feedbackText = "Waiting to start..."
-    
+    @State private var countdown = 3
+    @State private var showCountdown = false
+    @State private var progress: CGFloat = 1.0
+
     var body: some View {
         VStack {
-            Text("Workout Session for \(bodyPart)").padding()
-            Text(feedbackText)
-                .padding()
-                .foregroundColor(sessionActive ? .green : .red)
+            Text("\(bodyPart) Session").padding().font(.headline)
             
-            Button(sessionActive ? "Stop Workout" : "Start Workout") {
+            if showCountdown {
+                // Circular progress view
+                Circle()
+                    .stroke(lineWidth: 8)
+                    .opacity(0.1)
+                    .foregroundColor(Color.blue)
+                    .overlay(
+                        Text("\(countdown)")
+                            .font(.largeTitle)
+                            .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+                                if countdown > 0 {
+                                    countdown -= 1
+                                    progress -= 1 / 3
+                                }
+                            }
+                    )
+                .animation(.easeInOut(duration: 1), value: progress)
+                .frame(width: 80, height: 80)
+            }
+            
+            Button(action: {
                 if sessionActive {
                     motionManager.stopUpdates()
-                    feedbackText = "Session stopped."
+                    sessionActive = false
+                    countdown = 3
+                    progress = 1.0
+                    showCountdown = false
                 } else {
-                    feedbackText = "Starting session..."
-                    motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
-                        if !goodPrediction {
-                            backgroundColor = Color.red
-                            feedbackText = "Incorrect form!"
-                            WKInterfaceDevice.current().play(.failure)
-                        } else {
-                            backgroundColor = Color.green
-                            feedbackText = "Good form!"
+                    withAnimation {
+                        showCountdown = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
+                            withAnimation {
+                                showCountdown = false
+                            }
+                            if goodPrediction {
+                                // No haptic feedback if the prediction is good
+                            } else {
+                                WKInterfaceDevice.current().play(.failure)
+                            }
+                            sessionActive = true
                         }
                     }
                 }
-                sessionActive.toggle()
+            }) {
+                Text(sessionActive ? "Stop Workout" : "Start Workout")
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(25)
             }
+            .padding()
         }
-        .background(backgroundColor)
+        .padding()
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            backgroundColor = .clear
+            countdown = 3
+            progress = 1.0
         }
     }
 }

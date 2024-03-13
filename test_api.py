@@ -1,17 +1,17 @@
-import requests
-url = 'http://127.0.0.1:5000/predict'
+# import requests
+# url = 'http://127.0.0.1:8080/predict'
 
-test_data = [
-    [ 0.5990033,0.7488683,0.3909799,1,0.6442859,0.9701276]
-]
+# test_data = [
+#     [ 0.006676285,0.196432322,0.091168419,0.027175725,0.011251144,0.045799792]
+# ]
 
-data = {
-    'data': [test_data]
-}
+# data = {
+#     'data': [test_data]
+# }
 
-response = requests.post(url, json=data)
+# response = requests.post(url, json=data)
 
-print(response.json())
+# print(response.json())
 
 
 # Correct data
@@ -53,3 +53,27 @@ print(response.json())
 # 1,-0.075287022,0.35276407,-0.029198203,0.144223869,-0.028800864,0.197456181
 
 
+import requests
+
+# Define the API endpoint URL
+url = 'https://nittanyai-ro4jz76zva-ue.a.run.app/predict'
+
+# The sample data you want to send for prediction
+test_data = [
+     [ 0.006676285,0.196432322,0.091168419,0.027175725,0.011251144,0.045799792]
+ ]
+
+data = {
+     'data': [test_data]
+ }
+
+# Send the POST request
+response = requests.post(url, json=data)
+
+# Check if the request was successful
+if response.status_code == 200:
+    # Parse the JSON response
+    prediction = response.json()
+    print(prediction)
+else:
+    print("Failed to get a response from the API", response.status_code)

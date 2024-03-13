@@ -6,11 +6,14 @@
 //
 
 import SwiftUI
-import CoreMotion
 import Combine
+import CoreMotion
+import WatchKit
 
+// Gradient background setup
 let gradient1 = LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.6), Color.blue.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
 
+// Main ContentView structure
 struct ContentView: View {
     var body: some View {
         NavigationStack {
@@ -20,6 +23,7 @@ struct ContentView: View {
     }
 }
 
+// Welcome view structure
 struct WelcomeView: View {
     var body: some View {
         VStack {
@@ -30,6 +34,7 @@ struct WelcomeView: View {
     }
 }
 
+// Height setting view structure
 struct HeightSettingView: View {
     @State private var feet = 5
     @State private var inches = 8
@@ -37,131 +42,211 @@ struct HeightSettingView: View {
         VStack {
             Text("Set Your Height").font(.headline).padding([.bottom], 5)
             HStack {
-                Picker("Feet", selection: $feet) { ForEach(0..<8) { feet in Text("\(feet) ft").tag(feet) } }.labelsHidden().pickerStyle(.wheel).frame(width: 60, height: 85).clipped()
-                Picker("Inches", selection: $inches) { ForEach(0..<12) { inches in Text("\(inches) in").tag(inches) } }.labelsHidden().pickerStyle(.wheel).frame(width: 60, height: 85).clipped()
+                Picker("Feet", selection: $feet) { ForEach(0..<8) { Text("\($0) ft").tag($0) } }.labelsHidden().pickerStyle(.wheel).frame(width: 60, height: 85).clipped()
+                Picker("Inches", selection: $inches) { ForEach(0..<12) { Text("\($0) in").tag($0) } }.labelsHidden().pickerStyle(.wheel).frame(width: 60, height: 85).clipped()
             }
             NavigationButton(destination: WeightSettingView(), text: "Next", width: 135, height: 54)
         }
     }
 }
 
+// Weight setting view structure
 struct WeightSettingView: View {
     @State private var weight = 150
     var body: some View {
         VStack {
             Text("Set Your Weight").font(.headline).padding([.bottom], 5)
-            Picker("Weight", selection: $weight) { ForEach(50..<301) { weight in Text("\(weight) lbs").tag(weight) } }.labelsHidden().pickerStyle(.wheel).frame(width: 125, height: 85).clipped()
+            Picker("Weight", selection: $weight) { ForEach(50..<301) { Text("\($0) lbs").tag($0) } }.labelsHidden().pickerStyle(.wheel).frame(width: 125, height: 85).clipped()
             NavigationButton(destination: BodyPartCategoryView(), text: "Next", width: 135, height: 54)
         }
     }
 }
 
+// Motion data manager for handling CoreMotion updates and API communication
 class MotionDataManager: ObservableObject {
     private var motionManager: CMMotionManager?
-    private var timer: Timer?
     @Published var isCollecting = false
-    func startUpdates(bodyPart: String, completion: @escaping (Double) -> Void) {
-        isCollecting = true
+    
+    init() {
         motionManager = CMMotionManager()
-        motionManager?.startAccelerometerUpdates()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self, let data = self.motionManager?.accelerometerData else { return }
-            self.sendDataToAPI(bodyPart: bodyPart, data: data, completion: completion)
+        if motionManager?.isDeviceMotionAvailable ?? false {
+            print("Device Motion is available.")
+        } else {
+            print("Device Motion is not available.")
         }
     }
-    func stopUpdates() {
-        isCollecting = false
-        motionManager?.stopAccelerometerUpdates()
-        timer?.invalidate()
-        timer = nil
-        motionManager = nil
+
+    func startUpdates(bodyPart: String, completion: @escaping (Bool) -> Void) {
+        guard let motionManager = motionManager, motionManager.isDeviceMotionAvailable else {
+            print("Device Motion is not available.")
+            completion(false) // Indicate failure to start updates
+            return
+        }
+        
+        motionManager.deviceMotionUpdateInterval = 1.0 / 15.0 // Sample rate of 60 Hz
+        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
+            guard let motion = motion, error == nil else {
+                print("Error reading motion data: \(error!.localizedDescription)")
+                completion(false) // Indicate error in motion data collection
+                return
+            }
+            self?.isCollecting = true
+            print("Collecting motion data...")
+            
+            let data: [String: Any] = [
+                "accelerationX": motion.userAcceleration.x + motion.gravity.x,
+                "accelerationY": motion.userAcceleration.y + motion.gravity.y,
+                "accelerationZ": motion.userAcceleration.z + motion.gravity.z,
+                "rotationRateX": motion.rotationRate.x,
+                "rotationRateY": motion.rotationRate.y,
+                "rotationRateZ": motion.rotationRate.z
+            ]
+            
+            self?.sendDataToAPI(data: data, completion: completion)
+        }
     }
-    private func sendDataToAPI(bodyPart: String, data: CMAccelerometerData, completion: @escaping (Double) -> Void) {
-        let url = URL(string: "https://nittanyai-ro4jz76zva-ue.a.run.app/predict")!
+
+    func stopUpdates() {
+        motionManager?.stopDeviceMotionUpdates()
+        isCollecting = false
+        print("Stopped collecting motion data.")
+    }
+
+    private func sendDataToAPI(data: [String: Any], completion: @escaping (Bool) -> Void) {
+        guard let url = URL(string: "https://nittanyai-ro4jz76zva-ue.a.run.app/predict") else {
+            print("Invalid API URL.")
+            completion(false) // Indicate error in API URL
+            return
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Any] = ["bodyPart": bodyPart, "accelerationX": data.acceleration.x, "accelerationY": data.acceleration.y, "accelerationZ": data.acceleration.z]
+        
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+            request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
         } catch {
-            print("Error: cannot create JSON from body")
+            print("Error: cannot create JSON from data")
+            completion(false)
             return
         }
+        
+        print("Sending data to API...")
         URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data, error == nil else {
-                print("Error sending data to API: \(String(describing: error))")
+                print("Error sending data to API: \(error?.localizedDescription ?? "Unknown error")")
+                completion(false) // Indicate API communication error
                 return
             }
-            if let responseJSON = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any], let probability = responseJSON["probability"] as? Double {
-                DispatchQueue.main.async {
-                    completion(probability)
+            
+            print("Received response from API.")
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                do {
+                    if let jsonResponse = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any], let prediction = jsonResponse["prediction"] as? [[Double]] {
+                        let predictionValue = prediction.first?.first ?? 0.0
+                        print("Prediction value: \(predictionValue)")
+                        DispatchQueue.main.async {
+                            completion(predictionValue >= 0.5)
+                        }
+                    } else {
+                        print("Error parsing JSON response")
+                        completion(false) // Indicate JSON parsing error
+                    }
+                } catch {
+                    print("Error parsing JSON response")
+                    completion(false) // Indicate JSON parsing error
                 }
+            } else {
+                print("API request failed with response: \(String(describing: response))")
+                completion(false) // Indicate API request failure
             }
         }.resume()
     }
 }
 
+// View for selecting the body part to monitor
 struct BodyPartCategoryView: View {
     @ObservedObject var motionManager = MotionDataManager()
+    // Placeholder for actual body parts data
+    let bodyParts = ["Shoulder", "Leg","Chest","Back"]
+    
     var body: some View {
         NavigationStack {
-            VStack {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        ForEach(MockData.bodyParts) { bodyPart in
-                            NavigationLink(destination: WorkoutSessionView(bodyPart: bodyPart.bodyPart, motionManager: motionManager)) {
-                                Text(bodyPart.bodyPart).frame(width: 160, height: 54).background(Capsule().fill(Color.blue)).foregroundColor(.white)
-                            }
-                        }
-                    }
-                }.navigationTitle("Select Body Part").navigationBarTitleDisplayMode(.inline)
-            }
-        }
-    }
-}
-
-struct WorkoutSessionView: View {
-    var bodyPart: String
-    @ObservedObject var motionManager: MotionDataManager
-    @State private var backgroundColor = LinearGradient(gradient: Gradient(colors: [Color.pink.opacity(0.6), Color.purple.opacity(0.6), Color.blue.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
-
-    var body: some View {
-        VStack {
-            Text("Workout Session for \(bodyPart)").padding()
-            Spacer()
-            Button(action: {
-                motionManager.stopUpdates()
-            }) {
-                Image(systemName: "stop.circle.fill").resizable().aspectRatio(contentMode: .fill).frame(width: 50, height: 50).background(Color.white).clipShape(Circle()).foregroundColor(.red)
-            }.padding().background(backgroundColor).onAppear {
-                motionManager.startUpdates(bodyPart: bodyPart) { probability in
-                    if probability < 0.5 {
-                        let redGradient = LinearGradient(gradient: Gradient(colors: [Color.red.opacity(0.8), Color.red]), startPoint: .topLeading, endPoint: .bottomTrailing)
-                        backgroundColor = redGradient
-                        WKInterfaceDevice.current().play(.failure)
-                    }
+            List(bodyParts, id: \.self) { bodyPart in
+                NavigationLink(destination: WorkoutSessionView(bodyPart: bodyPart, motionManager: motionManager)) {
+                    Text(bodyPart)
                 }
             }
         }
     }
 }
+
+// View for the workout session
+struct WorkoutSessionView: View {
+    var bodyPart: String
+    @ObservedObject var motionManager: MotionDataManager
+    @State private var sessionActive = false
+    @State private var backgroundColor = Color.clear
+    @State private var feedbackText = "Waiting to start..."
+    
+    var body: some View {
+        VStack {
+            Text("Workout Session for \(bodyPart)").padding()
+            Text(feedbackText)
+                .padding()
+                .foregroundColor(sessionActive ? .green : .red)
+            
+            Button(sessionActive ? "Stop Workout" : "Start Workout") {
+                if sessionActive {
+                    motionManager.stopUpdates()
+                    feedbackText = "Session stopped."
+                } else {
+                    feedbackText = "Starting session..."
+                    motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
+                        if !goodPrediction {
+                            backgroundColor = Color.red
+                            feedbackText = "Incorrect form!"
+                            WKInterfaceDevice.current().play(.failure)
+                        } else {
+                            backgroundColor = Color.green
+                            feedbackText = "Good form!"
+                        }
+                    }
+                }
+                sessionActive.toggle()
+            }
+        }
+        .background(backgroundColor)
+        .onAppear {
+            backgroundColor = .clear
+        }
+    }
+}
+
 
 struct NavigationButton<Content: View>: View {
     let destination: Content
     let text: String
     let width: CGFloat
     let height: CGFloat
+
     var body: some View {
         NavigationLink(destination: destination) {
             Text(text)
-        }.frame(width: width, height: height).background(Capsule().fill(Color.blue)).foregroundColor(.white)
+        }
+        .frame(width: width, height: height)
+        .background(Capsule().fill(Color.blue))
+        .foregroundColor(.white)
     }
 }
 
+// Preview provider for ContentView
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
 }
+
+
+
+
 

@@ -46,6 +46,7 @@
 		E665BA542B769541004D99B7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		E665BA562B769544004D99B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E665BA592B769544004D99B7 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		E699832E2BA20D50002A645E /* AitheleteZoneApp-Watch-App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "AitheleteZoneApp-Watch-App-Info.plist"; sourceTree = SOURCE_ROOT; };
 		F8F5BA202B891ABA00B3A99F /* BodyParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyParts.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -80,6 +81,7 @@
 		E665BA512B769541004D99B7 /* AitheleteZoneApp Watch App */ = {
 			isa = PBXGroup;
 			children = (
+				E699832E2BA20D50002A645E /* AitheleteZoneApp-Watch-App-Info.plist */,
 				E665BA522B769541004D99B7 /* AitheleteZoneAppApp.swift */,
 				E665BA542B769541004D99B7 /* ContentView.swift */,
 				E665BA562B769544004D99B7 /* Assets.xcassets */,
@@ -337,6 +339,7 @@
 				DEVELOPMENT_TEAM = CD9755JQTD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "AitheleteZoneApp-Watch-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = AitheleteZoneApp;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
@@ -367,6 +370,7 @@
 				DEVELOPMENT_TEAM = CD9755JQTD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "AitheleteZoneApp-Watch-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = AitheleteZoneApp;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;

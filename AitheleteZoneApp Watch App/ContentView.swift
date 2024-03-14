@@ -190,73 +190,37 @@ struct WorkoutSessionView: View {
     var bodyPart: String
     @ObservedObject var motionManager: MotionDataManager
     @State private var sessionActive = false
-    @State private var countdown = 3
-    @State private var showCountdown = false
-    @State private var progress: CGFloat = 1.0
+    @State private var feedbackGradient = Gradient(colors: [.gray]) // Default gradient
 
     var body: some View {
         VStack {
-            Text("\(bodyPart) Session").padding().font(.headline)
-            
-            if showCountdown {
-                // Circular progress view
-                Circle()
-                    .stroke(lineWidth: 8)
-                    .opacity(0.1)
-                    .foregroundColor(Color.blue)
-                    .overlay(
-                        Text("\(countdown)")
-                            .font(.largeTitle)
-                            .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-                                if countdown > 0 {
-                                    countdown -= 1
-                                    progress -= 1 / 3
-                                }
-                            }
-                    )
-                .animation(.easeInOut(duration: 1), value: progress)
-                .frame(width: 80, height: 80)
-            }
-            
-            Button(action: {
+            Text("Workout Session for (bodyPart)").padding()
+            Text(sessionActive ? "Session Active" : "Session Inactive")
+                .padding()
+                .foregroundColor(sessionActive ? .green : .red)
+
+            Button(sessionActive ? "Stop Workout" : "Start Workout") {
                 if sessionActive {
                     motionManager.stopUpdates()
-                    sessionActive = false
-                    countdown = 3
-                    progress = 1.0
-                    showCountdown = false
+                    feedbackGradient = Gradient(colors: [Color.gray])
                 } else {
-                    withAnimation {
-                        showCountdown = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
-                            withAnimation {
-                                showCountdown = false
-                            }
-                            if goodPrediction {
-                                // No haptic feedback if the prediction is good
-                            } else {
-                                WKInterfaceDevice.current().play(.failure)
-                            }
-                            sessionActive = true
+                    motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
+                        if !goodPrediction {
+                            feedbackGradient = Gradient(colors: [Color.pink, Color.red])
+                            WKInterfaceDevice.current().play(.failure)
+                        } else {
+                            feedbackGradient = Gradient(colors: [Color.green, Color.blue])
                         }
                     }
                 }
-            }) {
-                Text(sessionActive ? "Stop Workout" : "Start Workout")
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(25)
+                sessionActive.toggle()
             }
-            .padding()
         }
+        .background(LinearGradient(gradient: feedbackGradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+        .cornerRadius(10)
         .padding()
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            countdown = 3
-            progress = 1.0
+            feedbackGradient = Gradient(colors: [.gray]) // Neutral starting gradient
         }
     }
 }

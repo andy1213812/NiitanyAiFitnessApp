@@ -83,7 +83,7 @@ class MotionDataManager: ObservableObject {
             return
         }
         
-        motionManager.deviceMotionUpdateInterval = 1.0 / 15.0 // Adjusted sample rate to 15 Hz for clarity
+        motionManager.deviceMotionUpdateInterval = 1.0 / 3.0 // Adjusted sample rate to 15 Hz for clarity
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
             guard let motion = motion, error == nil else {
                 print("Error reading motion data: \(error!.localizedDescription)")
@@ -124,7 +124,7 @@ class MotionDataManager: ObservableObject {
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         // Construct the payload with the motion data correctly formatted
-        let payload = ["data": motionData]
+        let payload = ["data": [motionData]]
         
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
@@ -146,22 +146,33 @@ class MotionDataManager: ObservableObject {
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 do {
                     let jsonResponse = try JSONSerialization.jsonObject(with: data, options: [])
-                    print("Response JSON: \(jsonResponse)")
-                    if let dictionary = jsonResponse as? [String: Any], let prediction = dictionary["prediction"] as? Double {
+                    print("Response JSON: \(jsonResponse)") // Log the full response
+                    
+                    if let dictionary = jsonResponse as? [String: Any],
+                       let predictionNestedArray = dictionary["prediction"] as? [[Any]],
+                       let firstPredictionArray = predictionNestedArray.first as? [Double],
+                       let predictionValue = firstPredictionArray.first {
+                        print("Parsed Prediction: \(predictionValue)") // Confirm parsing
                         DispatchQueue.main.async {
-                            completion(prediction >= 0.5)
+                            completion(predictionValue >= 0.55) // Use parsed value
                         }
                     } else {
                         print("Error: Unexpected data format")
-                        completion(false)
+                        DispatchQueue.main.async {
+                            completion(false)
+                        }
                     }
                 } catch {
                     print("Error parsing JSON response: \(error.localizedDescription)")
-                    completion(false)
+                    DispatchQueue.main.async {
+                        completion(false)
+                    }
                 }
             } else {
                 print("API request failed with response: \(String(describing: response))")
-                completion(false)
+                DispatchQueue.main.async {
+                    completion(false)
+                }
             }
         }.resume()
     }
@@ -224,8 +235,6 @@ struct WorkoutSessionView: View {
         }
     }
 }
-
-
 struct NavigationButton<Content: View>: View {
     let destination: Content
     let text: String

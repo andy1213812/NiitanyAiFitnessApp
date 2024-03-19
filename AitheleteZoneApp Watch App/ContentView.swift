@@ -154,7 +154,7 @@ class MotionDataManager: ObservableObject {
                        let predictionValue = firstPredictionArray.first {
                         print("Parsed Prediction: \(predictionValue)") // Confirm parsing
                         DispatchQueue.main.async {
-                            completion(predictionValue >= 0.55) // Use parsed value
+                            completion(predictionValue >= 0.53) // Use parsed value
                         }
                     } else {
                         print("Error: Unexpected data format")

@@ -75,7 +75,7 @@ class MotionDataManager: ObservableObject {
             print("Device Motion is not available.")
         }
     }
-
+    
     func startUpdates(bodyPart: String, completion: @escaping (Bool) -> Void) {
         guard let motionManager = motionManager, motionManager.isDeviceMotionAvailable else {
             print("Device Motion is not available.")
@@ -106,75 +106,80 @@ class MotionDataManager: ObservableObject {
             self?.sendDataToAPI(motionData: motionData, completion: completion)
         }
     }
-
+    
     func stopUpdates() {
         motionManager?.stopDeviceMotionUpdates()
         isCollecting = false
         print("Stopped collecting motion data.")
     }
-
+    
     private func sendDataToAPI(motionData: [[Double]], completion: @escaping (Bool) -> Void) {
         guard let url = URL(string: "https://nittanyai-ro4jz76zva-ue.a.run.app/predict") else {
             print("Invalid API URL.")
             completion(false)
             return
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Construct the payload with the motion data correctly formatted
-        let payload = ["data": [motionData]]
+        let requestGroup = DispatchGroup()
+        var isSuccess = true
         
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
-        } catch {
-            print("Error: cannot create JSON from payload")
-            completion(false)
-            return
-        }
-        
-        print("Sending data to API...")
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
-                print("Error sending data to API: \(error?.localizedDescription ?? "Unknown error")")
+        for dataChunk in motionData {
+            requestGroup.enter()
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let payload = ["data": [dataChunk]]
+            
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+            } catch {
+                print("Error: cannot create JSON from payload")
                 completion(false)
                 return
             }
             
-            print("Received response from API.")
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                do {
-                    let jsonResponse = try JSONSerialization.jsonObject(with: data, options: [])
-                    print("Response JSON: \(jsonResponse)") // Log the full response
-                    
-                    if let dictionary = jsonResponse as? [String: Any],
-                       let predictionNestedArray = dictionary["prediction"] as? [[Any]],
-                       let firstPredictionArray = predictionNestedArray.first as? [Double],
-                       let predictionValue = firstPredictionArray.first {
-                        print("Parsed Prediction: \(predictionValue)") // Confirm parsing
-                        DispatchQueue.main.async {
-                            completion(predictionValue >= 0.55) // Use parsed value
-                        }
-                    } else {
-                        print("Error: Unexpected data format")
-                        DispatchQueue.main.async {
-                            completion(false)
-                        }
-                    }
-                } catch {
-                    print("Error parsing JSON response: \(error.localizedDescription)")
-                    DispatchQueue.main.async {
-                        completion(false)
-                    }
+            print("Sending data to API...")
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                defer {
+                    requestGroup.leave()
                 }
-            } else {
-                print("API request failed with response: \(String(describing: response))")
-                DispatchQueue.main.async {
-                    completion(false)
+                
+                guard let data = data, error == nil else {
+                    print("Error sending data to API: \(error?.localizedDescription ?? "Unknown error")")
+                    isSuccess = false
+                    return
                 }
-            }
-        }.resume()
+                
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    do {
+                        let jsonResponse = try JSONSerialization.jsonObject(with: data, options: [])
+                        print("Response JSON: \(jsonResponse)")
+                        
+                        if let dictionary = jsonResponse as? [String: Any],
+                           let predictionNestedArray = dictionary["prediction"] as? [[Any]],
+                           let firstPredictionArray = predictionNestedArray.first as? [Double],
+                           let predictionValue = firstPredictionArray.first {
+                            print("Parsed Prediction: \(predictionValue)")
+                            completion(predictionValue >= 0.5675)
+                        } else {
+                            print("Error: Unexpected data format")
+                            isSuccess = false
+                        }
+                    } catch {
+                        print("Error parsing JSON response: \(error.localizedDescription)")
+                        isSuccess = false
+                    }
+                } else {
+                    print("API request failed with response: \(String(describing: response))")
+                    isSuccess = false
+                }
+            }.resume()
+        }
+        
+        requestGroup.notify(queue: .main) {
+            completion(isSuccess)
+        }
     }
 }
 

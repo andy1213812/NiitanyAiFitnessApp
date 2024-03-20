@@ -161,7 +161,7 @@ class MotionDataManager: ObservableObject {
                            let firstPredictionArray = predictionNestedArray.first as? [Double],
                            let predictionValue = firstPredictionArray.first {
                             print("Parsed Prediction: \(predictionValue)")
-                            completion(predictionValue >= 0.53)
+                            completion(predictionValue >= 0.5675)
                         } else {
                             print("Error: Unexpected data format")
                             isSuccess = false

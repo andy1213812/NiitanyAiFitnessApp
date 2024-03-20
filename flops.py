@@ -1,4 +1,4 @@
-# Testing the flop speed of the model
+# Testing and calculate the flop speed of the CNN model
 
 
 
@@ -24,4 +24,4 @@ def get_flops(model_h5_path):
         
 
 tf.compat.v1.reset_default_graph()
-print(get_flops('/Users/jackliu/Documents/GitHub/NiitanyAiFitnessApp/LSTM.h5'))
+print(get_flops('CNN_Model.h5_path'))

@@ -83,7 +83,7 @@ class MotionDataManager: ObservableObject {
             return
         }
         
-        motionManager.deviceMotionUpdateInterval = 1.0 / 3.0 // Adjusted sample rate to 15 Hz for clarity
+        motionManager.deviceMotionUpdateInterval = 1.0 / 1.0 // Adjusted sample rate to 15 Hz for clarity
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
             guard let motion = motion, error == nil else {
                 print("Error reading motion data: \(error!.localizedDescription)")
@@ -129,7 +129,7 @@ class MotionDataManager: ObservableObject {
             request.httpMethod = "POST"
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             
-            let payload = ["data": [dataChunk]]
+            let payload = ["data": [[dataChunk]]]
             
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])

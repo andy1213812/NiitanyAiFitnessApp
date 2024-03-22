@@ -10,10 +10,8 @@ import Combine
 import CoreMotion
 import WatchKit
 
-// Gradient background setup
 let gradient1 = LinearGradient(gradient: Gradient(colors: [Color.purple.opacity(0.6), Color.blue.opacity(0.6)]), startPoint: .topLeading, endPoint: .bottomTrailing)
 
-// Main ContentView structure
 struct ContentView: View {
     var body: some View {
         NavigationStack {
@@ -23,7 +21,6 @@ struct ContentView: View {
     }
 }
 
-// Welcome view structure
 struct WelcomeView: View {
     var body: some View {
         VStack {
@@ -34,7 +31,6 @@ struct WelcomeView: View {
     }
 }
 
-// Height setting view structure
 struct HeightSettingView: View {
     @State private var feet = 5
     @State private var inches = 8
@@ -50,7 +46,6 @@ struct HeightSettingView: View {
     }
 }
 
-// Weight setting view structure
 struct WeightSettingView: View {
     @State private var weight = 150
     var body: some View {
@@ -62,7 +57,6 @@ struct WeightSettingView: View {
     }
 }
 
-// Motion data manager for handling CoreMotion updates and API communication
 class MotionDataManager: ObservableObject {
     private var motionManager: CMMotionManager?
     @Published var isCollecting = false
@@ -79,21 +73,21 @@ class MotionDataManager: ObservableObject {
     func startUpdates(bodyPart: String, completion: @escaping (Bool) -> Void) {
         guard let motionManager = motionManager, motionManager.isDeviceMotionAvailable else {
             print("Device Motion is not available.")
-            completion(false) // Indicate failure to start updates
+            completion(false)
             return
         }
         
-        motionManager.deviceMotionUpdateInterval = 1.0 / 1.0 // Adjusted sample rate to 15 Hz for clarity
+        motionManager.deviceMotionUpdateInterval = 1.0 // 1.0 / 1.0
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
             guard let motion = motion, error == nil else {
                 print("Error reading motion data: \(error!.localizedDescription)")
-                completion(false) // Indicate error in motion data collection
+                completion(false)
                 return
             }
             self?.isCollecting = true
             print("Collecting motion data...")
             
-            // Create an array of motion data in the expected order
+
             let motionData: [[Double]] = [[
                 motion.userAcceleration.x,
                 motion.userAcceleration.y,
@@ -183,11 +177,8 @@ class MotionDataManager: ObservableObject {
     }
 }
 
-
-// View for selecting the body part to monitor
 struct BodyPartCategoryView: View {
     @ObservedObject var motionManager = MotionDataManager()
-    // Placeholder for actual body parts data
     let bodyParts = ["Shoulder", "Leg","Chest","Back"]
     
     var body: some View {
@@ -201,35 +192,30 @@ struct BodyPartCategoryView: View {
     }
 }
 
-// View for the workout session
 struct WorkoutSessionView: View {
     var bodyPart: String
     @ObservedObject var motionManager: MotionDataManager
     @State private var sessionActive = false
-    @State private var progressValue = 0.0 // Mocked progress value, replace with actual workout progress logic
-    @State private var feedbackColor: Color = .gray // Initial neutral feedback color
+    @State private var progressValue = 0.0
+    @State private var feedbackColor: Color = .gray
 
     var body: some View {
         ZStack {
-            // Background that changes color based on workout feedback
             feedbackColor
                 .edgesIgnoringSafeArea(.all)
                 .animation(.easeInOut, value: feedbackColor)
             
             VStack {
-                // Displaying workout session information
                 Text("Workout Session: \(bodyPart)")
                     .font(.body)
                     .fontWeight(.medium)
                     .padding()
                 
-                // Progress and motivational messages
                 ProgressView(value: progressValue, total: 1.0)
                     .progressViewStyle(LinearProgressViewStyle())
                     .scaleEffect(x: 1, y: 2, anchor: .center)
                     .padding()
                 
-                // Session active/inactive indicator and button
                 Text(sessionActive ? "Session Active" : "Session Inactive")
                     .foregroundColor(sessionActive ? .green : .red)
                     .padding()
@@ -260,14 +246,12 @@ struct WorkoutSessionView: View {
         motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
             withAnimation {
                 if !goodPrediction {
-                    // Poor prediction feedback
                     feedbackColor = Color.red
-                    progressValue = 0.4 // Adjust based on actual progress logic
+                    progressValue = 0.4
                     WKInterfaceDevice.current().play(.failure)
                 } else {
-                    // Good prediction feedback
                     feedbackColor = Color.green
-                    progressValue = 1.0 // Adjust based on actual progress logic
+                    progressValue = 1.0
                 }
             }
         }
@@ -276,29 +260,12 @@ struct WorkoutSessionView: View {
     private func stopWorkout() {
         motionManager.stopUpdates()
         withAnimation {
-            feedbackColor = .gray // Reset to neutral
-            progressValue = 0.0 // Reset progress
+            feedbackColor = .gray
+            progressValue = 0.0
         }
     }
 }
 
-struct NavigationButton<Content: View>: View {
-    let destination: Content
-    let text: String
-    let width: CGFloat
-    let height: CGFloat
-
-    var body: some View {
-        NavigationLink(destination: destination) {
-            Text(text)
-        }
-        .frame(width: width, height: height)
-        .background(Capsule().fill(Color.blue))
-        .foregroundColor(.white)
-    }
-}
-
-// Preview provider for ContentView
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()

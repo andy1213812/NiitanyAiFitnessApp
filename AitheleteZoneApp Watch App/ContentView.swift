@@ -161,7 +161,7 @@ class MotionDataManager: ObservableObject {
                            let firstPredictionArray = predictionNestedArray.first as? [Double],
                            let predictionValue = firstPredictionArray.first {
                             print("Parsed Prediction: \(predictionValue)")
-                            completion(predictionValue >= 0.5675)
+                            completion(predictionValue >= 0.585)
                         } else {
                             print("Error: Unexpected data format")
                             isSuccess = false
@@ -206,40 +206,82 @@ struct WorkoutSessionView: View {
     var bodyPart: String
     @ObservedObject var motionManager: MotionDataManager
     @State private var sessionActive = false
-    @State private var feedbackGradient = Gradient(colors: [.gray]) // Default gradient
+    @State private var progressValue = 0.0 // Mocked progress value, replace with actual workout progress logic
+    @State private var feedbackColor: Color = .gray // Initial neutral feedback color
 
     var body: some View {
-        VStack {
-            Text("Workout Session for (bodyPart)").padding()
-            Text(sessionActive ? "Session Active" : "Session Inactive")
-                .padding()
-                .foregroundColor(sessionActive ? .green : .red)
+        ZStack {
+            // Background that changes color based on workout feedback
+            feedbackColor
+                .edgesIgnoringSafeArea(.all)
+                .animation(.easeInOut, value: feedbackColor)
+            
+            VStack {
+                // Displaying workout session information
+                Text("Workout Session: \(bodyPart)")
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .padding()
+                
+                // Progress and motivational messages
+                ProgressView(value: progressValue, total: 1.0)
+                    .progressViewStyle(LinearProgressViewStyle())
+                    .scaleEffect(x: 1, y: 2, anchor: .center)
+                    .padding()
+                
+                // Session active/inactive indicator and button
+                Text(sessionActive ? "Session Active" : "Session Inactive")
+                    .foregroundColor(sessionActive ? .green : .red)
+                    .padding()
 
-            Button(sessionActive ? "Stop Workout" : "Start Workout") {
-                if sessionActive {
-                    motionManager.stopUpdates()
-                    feedbackGradient = Gradient(colors: [Color.gray])
-                } else {
-                    motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
-                        if !goodPrediction {
-                            feedbackGradient = Gradient(colors: [Color.pink, Color.red])
-                            WKInterfaceDevice.current().play(.failure)
-                        } else {
-                            feedbackGradient = Gradient(colors: [Color.green, Color.blue])
-                        }
-                    }
+                Button(action: toggleSession) {
+                    Text(sessionActive ? "Stop Workout" : "Start Workout")
+                        .fontWeight(.bold)
+                        .frame(width: 180, height: 50)
+                        .background(sessionActive ? Color.red : Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(25)
                 }
-                sessionActive.toggle()
+                .padding()
             }
         }
-        .background(LinearGradient(gradient: feedbackGradient, startPoint: .topLeading, endPoint: .bottomTrailing))
-        .cornerRadius(10)
-        .padding()
-        .onAppear {
-            feedbackGradient = Gradient(colors: [.gray]) // Neutral starting gradient
+    }
+
+    private func toggleSession() {
+        sessionActive.toggle()
+        if sessionActive {
+            startWorkout()
+        } else {
+            stopWorkout()
+        }
+    }
+
+    private func startWorkout() {
+        motionManager.startUpdates(bodyPart: bodyPart) { goodPrediction in
+            withAnimation {
+                if !goodPrediction {
+                    // Poor prediction feedback
+                    feedbackColor = Color.red
+                    progressValue = 0.4 // Adjust based on actual progress logic
+                    WKInterfaceDevice.current().play(.failure)
+                } else {
+                    // Good prediction feedback
+                    feedbackColor = Color.green
+                    progressValue = 1.0 // Adjust based on actual progress logic
+                }
+            }
+        }
+    }
+
+    private func stopWorkout() {
+        motionManager.stopUpdates()
+        withAnimation {
+            feedbackColor = .gray // Reset to neutral
+            progressValue = 0.0 // Reset progress
         }
     }
 }
+
 struct NavigationButton<Content: View>: View {
     let destination: Content
     let text: String

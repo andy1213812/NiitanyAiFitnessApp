@@ -3,7 +3,7 @@ import SwiftUI
 import CoreMotion
 // Using CoreMotion API in Collecting datasets from the user
 
-struct ContentView: View {
+struct DataCollectionView: View {
     @State private var isCollectingData = false
     @State private var showAlert = false // State to control alert visibility
     let motionManager = CMMotionManager()
@@ -75,8 +75,8 @@ struct ContentView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
+struct DataCollectionView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        DataCollectionView()
     }
 }

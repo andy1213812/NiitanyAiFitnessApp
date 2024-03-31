@@ -38,7 +38,7 @@ Our policy on data management and protection is centered on the principles of tr
 The raw datasets collected from the accelerometer and gyroscope are stored in the "Datasets" folder, while the processed and labeled datasets are in the "CleanDatasets" folder.
 
 #### Training Model
-We are using an LSTM model to train our datasets, available in [LSTM.py](https://github.com/andy1213812/NiitanyAiFitnessApp/blob/main/LSTM.py). Additionally, we are exploring the use of CNN for model training, with the source code available in [CNN.ipynb](https://github.com/andy1213812/NiitanyAiFitnessApp/blob/main/CNN.ipynb).
+We are using an LSTM model to train our datasets, available in [LSTM.py](https://github.com/andy1213812/NiitanyAiFitnessApp/blob/main/LSTM.py). Additionally, we are exploring the use of CNN for model training, with the source code available in [CNN.ipynb](https://github.com/andy1213812/NiitanyAiFitnessApp/blob/main/computer_vision/CNN.ipynb).
 
 # How to Use
 

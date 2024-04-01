@@ -10,9 +10,9 @@
 ##### you might encounter issues where gyroscope data isn't showing up in Xcode as expected. A useful discussion on troubleshooting this can be found in this [Developer Forum Thread](https://developer.apple.com/forums/thread/685973). It provides insights and potential fixes for common problems related to gyroscope data collection in iOS development.
 
 
-# AIthleteZone: Enhancing Workout Form with AI and Wearable Technology
+# AIthleteZone: Enhancing Workout Form with AI and Wearable Technology [additional documentation](https://docs.google.com/document/d/1i6gs9daAn1pqhulfJuvQg0r6pUka8Zwr2AiKpF84Nr8/edit?usp=sharing)
 
-## Introduction
+## Introduction 
 
 AIthleteZone is a groundbreaking application that leverages advanced AI technologies, including LSTM (Long Short-Term Memory) networks and CNNs (Convolutional Neural Networks), in combination with the accelerometer and gyroscope of not only the Apple Watch but any other smart watches. This innovative approach allows users to improve their workout forms by providing real-time feedback on their exercise execution, making it an essential tool for beginners and fitness enthusiasts alike.
 

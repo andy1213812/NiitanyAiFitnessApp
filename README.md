@@ -50,7 +50,8 @@ We have developed our backend API, [App.py](https://github.com/andy1213812/Niita
 
 ## Future Potential
 
-The integration of CNN and video capabilities of iPhones opens up new possibilities for enhancing our application's accuracy in monitoring and improving workout form. By harnessing the power of video analysis, we can offer more detailed feedback and personalized guidance, pushing the boundaries of what's possible in virtual fitness coaching. This development not only represents a significant advancement in our app's functionality but also lays the groundwork for future innovations in the field of AI-powered fitness solutions. Computer Vision model training file is available in [computer_vision](https://github.com/andy1213812/NiitanyAiFitnessApp/tree/main/computer_vision)
+In the future, we are intergreating new feature that using camera and your watch to provide form correction by using OpenCV. The future model will provide feedback to user based both aspects of result (Camera and watch feature). The integration of CNN and video capabilities of iPhones opens up new possibilities for enhancing our application's accuracy in monitoring and improving workout form. By harnessing the power of video analysis, we can offer more detailed feedback and personalized guidance, pushing the boundaries of what's possible in virtual fitness coaching. This development not only represents a significant advancement in our app's functionality but also lays the groundwork for future innovations in the field of AI-powered fitness solutions.
+Computer Vision model training file is available in [computer_vision](https://github.com/andy1213812/NiitanyAiFitnessApp/tree/main/computer_vision)  
 
 ## Conclusion
 

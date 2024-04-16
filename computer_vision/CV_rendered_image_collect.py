@@ -5,6 +5,8 @@ import pandas as pd
 from openpyxl import Workbook
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
+connection_drawing_spec = mp_drawing.DrawingSpec(color=(255, 255, 0), thickness=10, circle_radius=2)
+landmark_drawing_spec = mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=10, circle_radius=5)
 
 
 
@@ -12,7 +14,7 @@ mp_pose = mp.solutions.pose
 cam = cv2.VideoCapture(0)
 # cam.set(3, 100)
 # cam.set(4, 100)
-number_of_images = 100
+number_of_images = 50
 current_images = 0
 
 
@@ -36,17 +38,20 @@ with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as 
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         if results.pose_landmarks != None:
-            mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-            cv2.imwrite(f'saying_hello/squat_correct_IMAGE_{current_images}.png', image)
+            mp_drawing.draw_landmarks(image, 
+                                  results.pose_landmarks, 
+                                  mp_pose.POSE_CONNECTIONS,
+                                  connection_drawing_spec=connection_drawing_spec,
+                                  landmark_drawing_spec = landmark_drawing_spec)
+            cv2.imwrite(f'/Users/jackliu/Documents/GitHub/NiitanyAiFitnessApp/computer_vision/incorrect_image/squat_correct_IMAGE_{current_images}.png', image)
             current_images += 1
-
-
+        
         cv2.imshow('Cam', image)
 
         if cv2.waitKey(50) == ord('q'):
             break
 
-    cam.relase()
+    cam.release()
     cv2.destroyAllWindows()
 
 
